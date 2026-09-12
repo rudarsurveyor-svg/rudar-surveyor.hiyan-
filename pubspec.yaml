@@ -1,1 +1,19 @@
+name: rudar_surveyor
+description: RUDAR SURVEYOR - Land Measurement and Calculator App
+publish_to: 'none'
+version: 1.0.0+1
 
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.5.3
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  share_plus: ^11.0.0
+
+flutter:
+  uses-material-design: true
