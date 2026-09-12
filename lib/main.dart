@@ -1,9 +1,9 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:share_plus/share_plus.dart';
 
 void main() {
   runApp(const RudarSurveyorApp());
@@ -20,12 +20,15 @@ class RudarSurveyorApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.blue,
-        fontFamily: 'sans',
       ),
       home: const HomeScreen(),
     );
   }
 }
+
+// ============================================================
+// MODEL
+// ============================================================
 
 class SurveyRecord {
   String owner;
@@ -46,15 +49,17 @@ class SurveyRecord {
     required this.mobile,
   });
 
-  Map<String, dynamic> toJson() => {
-        'owner': owner,
-        'village': village,
-        'taluka': taluka,
-        'surveyNo': surveyNo,
-        'date': date,
-        'payment': payment,
-        'mobile': mobile,
-      };
+  Map<String, dynamic> toJson() {
+    return {
+      'owner': owner,
+      'village': village,
+      'taluka': taluka,
+      'surveyNo': surveyNo,
+      'date': date,
+      'payment': payment,
+      'mobile': mobile,
+    };
+  }
 
   factory SurveyRecord.fromJson(Map<String, dynamic> json) {
     return SurveyRecord(
@@ -68,6 +73,10 @@ class SurveyRecord {
     );
   }
 }
+
+// ============================================================
+// HOME SCREEN
+// ============================================================
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -91,13 +100,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       records = data
-          .map((e) => SurveyRecord.fromJson(jsonDecode(e)))
+          .map(
+            (e) => SurveyRecord.fromJson(
+              jsonDecode(e) as Map<String, dynamic>,
+            ),
+          )
           .toList();
     });
   }
 
-  Future<void>saveRecords() async {
+  Future<void> saveRecords() async {
     final prefs = await SharedPreferences.getInstance();
+
     await prefs.setStringList(
       'records',
       records.map((e) => jsonEncode(e.toJson())).toList(),
@@ -118,7 +132,10 @@ class _HomeScreenState extends State<HomeScreen> {
             }
 
             await saveRecords();
-            setState(() {});
+
+            if (mounted) {
+              setState(() {});
+            }
           },
         ),
       ),
@@ -126,28 +143,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> deleteRecord(int index) async {
-    final ok = await showDialog<bool>(
+    final result = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('રેકોર્ડ Delete કરવો છે?'),
-        content: const Text('આ રેકોર્ડ કાયમ માટે Delete થશે.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('ના'),
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('રેકોર્ડ Delete કરવો છે?'),
+          content: const Text(
+            'આ રેકોર્ડ કાયમ માટે Delete થશે.',
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('હા, Delete'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('ના'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('હા, Delete'),
+            ),
+          ],
+        );
+      },
     );
 
-    if (ok == true) {
+    if (result == true) {
       records.removeAt(index);
       await saveRecords();
-      setState(() {});
+
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -157,12 +181,21 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // HEADER
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 25, 20, 25),
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                24,
+                20,
+                28,
+              ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xff1976D2), Color(0xff42A5F5)],
+                  colors: [
+                    Color(0xff1565C0),
+                    Color(0xff42A5F5),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -175,8 +208,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       Container(
-                        width: 58,
-                        height: 58,
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -184,13 +217,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: const Icon(
                           Icons.architecture,
                           size: 38,
-                          color: Color(0xff1976D2),
+                          color: Color(0xff1565C0),
                         ),
                       ),
                       const SizedBox(width: 14),
                       const Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
                             Text(
                               'RUDAR SURVEYOR',
@@ -202,17 +236,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'જમીન માપણી માટેનું સરળ એપ',
+                              'Land Measurement & Calculator',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 14,
+                                fontSize: 13,
                               ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          showAboutDialog(
+                            context: context,
+                            applicationName: 'RUDAR SURVEYOR',
+                            applicationVersion: '1.0.0',
+                            applicationLegalese:
+                                'Land Survey & Calculator App',
+                          );
+                        },
                         icon: const Icon(
                           Icons.settings,
                           color: Colors.white,
@@ -220,101 +262,142 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'જમીન માપણી • ગણતરી • રિપોર્ટ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),
 
+            // MENU
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(18),
                 children: [
                   MenuCard(
-                    icon: Icons.assignment,
+                    icon: Icons.straighten,
                     title: 'જમીન માપણી માહિતી',
-                    subtitle: 'માલિક અને જમીનની માહિતી Save કરો',
+                    subtitle:
+                        'માલિક અને જમીનની માહિતી Save કરો',
                     onTap: () => openForm(),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 14),
                   MenuCard(
                     icon: Icons.calculate,
                     title: 'જમીનનું Calculator',
-                    subtitle: 'Length × Width થી જમીનનું ક્ષેત્રફળ',
+                    subtitle:
+                        'Length × Width દ્વારા વિસ્તાર ગણો',
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const CalculatorScreen(),
+                          builder: (_) =>
+                              const CalculatorScreen(),
                         ),
                       );
                     },
                   ),
+                  const SizedBox(height: 24),
 
-                  const SizedBox(height: 25),
+                  // SAVED RECORDS
+                  if (records.isNotEmpty)
+                    Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Saved Records',
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ...List.generate(
+                              records.length,
+                              (index) {
+                                final record = records[index];
 
-                  if (records.isNotEmpty) ...[
-                    const Text(
-                      'Saved Records',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    ...records.asMap().entries.map(
-                      (entry) => Card(
-                        child: ListTile(
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.person),
-                          ),
-                          title: Text(entry.value.owner),
-                          subtitle: Text(
-                            'ગામ: ${entry.value.village}  •  સર્વે: ${entry.value.surveyNo}',
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) {
-                              if (value == 'view') {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => RecordViewScreen(
-                                      record: entry.value,
+                                return Card(
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      child: Text(
+                                        '${index + 1}',
+                                      ),
+                                    ),
+                                    title: Text(
+                                      record.owner.isEmpty
+                                          ? 'નામ ઉપલબ્ધ નથી'
+                                          : record.owner,
+                                    ),
+                                    subtitle: Text(
+                                      '${record.village} • '
+                                      '${record.surveyNo}',
+                                    ),
+                                    trailing: PopupMenuButton(
+                                      itemBuilder:
+                                          (context) => [
+                                        const PopupMenuItem(
+                                          value: 'view',
+                                          child: Text('View'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'edit',
+                                          child: Text('Edit'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'pdf',
+                                          child: Text(
+                                            'Generate PDF',
+                                          ),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Text('Delete'),
+                                        ),
+                                      ],
+                                      onSelected: (value) {
+                                        if (value == 'view') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  RecordViewScreen(
+                                                record: record,
+                                              ),
+                                            ),
+                                          );
+                                        } else if (value == 'edit') {
+                                          openForm(
+                                            record: record,
+                                            index: index,
+                                          );
+                                        } else if (value == 'pdf') {
+                                          generatePdf(record);
+                                        } else if (value ==
+                                            'delete') {
+                                          deleteRecord(index);
+                                        }
+                                      },
                                     ),
                                   ),
                                 );
-                              } else if (value == 'edit') {
-                                openForm(
-                                  record: entry.value,
-                                  index: entry.key,
-                                );
-                              } else if (value == 'delete') {
-                                deleteRecord(entry.key);
-                              } else if (value == 'pdf') {
-                                createPdf(entry.value);
-                              }
-                            },
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(
-                                value: 'view',
-                                child: Text('View'),
-                              ),
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: Text('Edit'),
-                              ),
-                              PopupMenuItem(
-                                value: 'pdf',
-                                child: Text('Generate PDF'),
-                              ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Text('Delete'),
-                              ),
-                            ],
-                          ),
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
 
                   const SizedBox(height: 30),
 
@@ -322,20 +405,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       children: [
                         Text(
-                          'Customer Care',
+                          'RUDAR SURVEYOR',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 17,
                           ),
                         ),
                         SizedBox(height: 5),
                         Text(
-                          'Y.M. DHUNDHALAVA',
-                          style: TextStyle(fontSize: 15),
+                          'Customer Care: Y.M. DHUNDHALAVA',
+                          textAlign: TextAlign.center,
                         ),
                         Text(
                           '8487847474',
-                          style: TextStyle(fontSize: 15),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -348,51 +433,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  Future<void> createPdf(SurveyRecord record) async {
-    final doc = pw.Document();
-
-    doc.addPage(
-      pw.Page(
-        build: (context) {
-          return pw.Padding(
-            padding: const pw.EdgeInsets.all(30),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'RUDAR SURVEYOR',
-                  style: pw.TextStyle(
-                    fontSize: 26,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.SizedBox(height: 8),
-                pw.Text('LAND SURVEY REPORT'),
-                pw.Divider(),
-                pw.SizedBox(height: 20),
-                pw.Text('Owner Name: ${record.owner}'),
-                pw.Text('Village: ${record.village}'),
-                pw.Text('Taluka: ${record.taluka}'),
-                pw.Text('Survey Number: ${record.surveyNo}'),
-                pw.Text('Date: ${record.date}'),
-                pw.Text('Payment: ${record.payment}'),
-                pw.Text('Mobile: ${record.mobile}'),
-                pw.SizedBox(height: 40),
-                pw.Text('Generated by RUDAR SURVEYOR'),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-
-    await Printing.sharePdf(
-      bytes: await doc.save(),
-      filename: 'RUDAR_SURVEYOR_REPORT.pdf',
-    );
-  }
 }
+
+// ============================================================
+// MENU CARD
+// ============================================================
 
 class MenuCard extends StatelessWidget {
   final IconData icon;
@@ -419,17 +464,27 @@ class MenuCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 30,
-                child: Icon(icon, size: 30),
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  icon,
+                  size: 32,
+                  color: Colors.blue.shade700,
+                ),
               ),
-              const SizedBox(width: 18),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
@@ -439,7 +494,12 @@ class MenuCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    Text(subtitle),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -452,9 +512,13 @@ class MenuCard extends StatelessWidget {
   }
 }
 
+// ============================================================
+// SURVEY FORM
+// ============================================================
+
 class SurveyFormScreen extends StatefulWidget {
   final SurveyRecord? record;
-  final Function(SurveyRecord) onSave;
+  final Future<void> Function(SurveyRecord record) onSave;
 
   const SurveyFormScreen({
     super.key,
@@ -463,10 +527,12 @@ class SurveyFormScreen extends StatefulWidget {
   });
 
   @override
-  State<SurveyFormScreen> createState() => _SurveyFormScreenState();
+  State<SurveyFormScreen> createState() =>
+      _SurveyFormScreenState();
 }
 
-class _SurveyFormScreenState extends State<SurveyFormScreen> {
+class _SurveyFormScreenState
+    extends State<SurveyFormScreen> {
   final owner = TextEditingController();
   final village = TextEditingController();
   final taluka = TextEditingController();
@@ -480,6 +546,7 @@ class _SurveyFormScreenState extends State<SurveyFormScreen> {
     super.initState();
 
     final r = widget.record;
+
     if (r != null) {
       owner.text = r.owner;
       village.text = r.village;
@@ -489,8 +556,11 @@ class _SurveyFormScreenState extends State<SurveyFormScreen> {
       payment.text = r.payment;
       mobile.text = r.mobile;
     } else {
+      final now = DateTime.now();
       date.text =
-          '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}';
+          '${now.day.toString().padLeft(2, '0')}/'
+          '${now.month.toString().padLeft(2, '0')}/'
+          '${now.year}';
     }
   }
 
@@ -506,186 +576,84 @@ class _SurveyFormScreenState extends State<SurveyFormScreen> {
     super.dispose();
   }
 
-  InputDecoration decoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+  Future<void> selectDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
     );
+
+    if (selected != null) {
+      setState(() {
+        date.text =
+            '${selected.day.toString().padLeft(2, '0')}/'
+            '${selected.month.toString().padLeft(2, '0')}/'
+            '${selected.year}';
+      });
+    }
   }
 
-  void save() {
-    if (owner.text.trim().isEmpty ||
-        village.text.trim().isEmpty ||
-        surveyNo.text.trim().isEmpty) {
+  Future<void> save() async {
+    if (owner.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('માલિકનું નામ, ગામ અને સર્વે નંબર જરૂરી છે.'),
+          content: Text('માલિકનું નામ નાખો'),
         ),
       );
       return;
     }
 
-    widget.onSave(
-      SurveyRecord(
-        owner: owner.text.trim(),
-        village: village.text.trim(),
-        taluka: taluka.text.trim(),
-        surveyNo: surveyNo.text.trim(),
-        date: date.text.trim(),
-        payment: payment.text.trim(),
-        mobile: mobile.text.trim(),
-      ),
+    final record = SurveyRecord(
+      owner: owner.text.trim(),
+      village: village.text.trim(),
+      taluka: taluka.text.trim(),
+      surveyNo: surveyNo.text.trim(),
+      date: date.text.trim(),
+      payment: payment.text.trim(),
+      mobile: mobile.text.trim(),
     );
 
-    Navigator.pop(context);
+    await widget.onSave(record);
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.record != null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.record == null
-              ? 'જમીન માપણી માહિતી'
-              : 'માહિતી Edit કરો',
+          isEdit
+              ? 'માહિતી Edit કરો'
+              : 'જમીન માપણી માહિતી',
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          TextField(
+          AppTextField(
             controller: owner,
-            decoration: decoration('માલિકનું નામ', Icons.person),
+            label: 'માલિકનું નામ',
+            icon: Icons.person,
           ),
-          const SizedBox(height: 14),
-          TextField(
+          AppTextField(
             controller: village,
-            decoration: decoration('ગામ', Icons.location_city),
+            label: 'ગામ',
+            icon: Icons.location_city,
           ),
-          const SizedBox(height: 14),
-          TextField(
+          AppTextField(
             controller: taluka,
-            decoration: decoration('તાલુકો', Icons.map),
+            label: 'તાલુકો',
+            icon: Icons.map,
           ),
-          const SizedBox(height: 14),
-          TextField(
+          AppTextField(
             controller: surveyNo,
-            decoration: decoration('સર્વે નંબર', Icons.numbers),
+            label: 'સર્વે નંબર',
+            icon: Icons.numbers,
           ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: date,
-            decoration: decoration('તારીખ', Icons.calendar_month),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: payment,
-            keyboardType: TextInputType.number,
-            decoration: decoration('પેમેન્ટ', Icons.currency_rupee),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: mobile,
-            keyboardType: TextInputType.phone,
-            decoration: decoration('મોબાઇલ નંબર', Icons.phone),
-          ),
-          const SizedBox(height: 25),
-          SizedBox(
-            height: 52,
-            child: FilledButton.icon(
-              onPressed: save,
-              icon: const Icon(Icons.save),
-              label: const Text(
-                'Save',
-                style: TextStyle(fontSize: 18),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class RecordViewScreen extends StatelessWidget {
-  final SurveyRecord record;
-
-  const RecordViewScreen({
-    super.key,
-    required this.record,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final items = {
-      'માલિકનું નામ': record.owner,
-      'ગામ': record.village,
-      'તાલુકો': record.taluka,
-      'સર્વે નંબર': record.surveyNo,
-      'તારીખ': record.date,
-      'પેમેન્ટ': record.payment,
-      'મોબાઇલ નંબર': record.mobile,
-    };
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Survey Details')),
-      body: ListView(
-        padding: const EdgeInsets.all(18),
-        children: items.entries
-            .map(
-              (e) => Card(
-                child: ListTile(
-                  title: Text(e.key),
-                  subtitle: Text(
-                    e.value.isEmpty ? '-' : e.value,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-}
-
-class CalculatorScreen extends StatefulWidget {
-  const CalculatorScreen({super.key});
-
-  @override
-  State<CalculatorScreen> createState() => _CalculatorScreenState();
-}
-
-class _CalculatorScreenState extends State<CalculatorScreen> {
-  final length = TextEditingController();
-  final width = TextEditingController();
-
-  double result = 0;
-
-  void calculate() {
-    final l = double.tryParse(length.text) ?? 0;
-    final w = double.tryParse(width.text) ?? 0;
-
-    setState(() {
-      result = l * w;
-    });
-  }
-
-  @override
-  void dispose() {
-    length.dispose();
-    width.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('જમીનનું Calcu
+          TextFie
