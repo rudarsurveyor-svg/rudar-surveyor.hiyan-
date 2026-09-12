@@ -655,5 +655,133 @@ class _SurveyFormScreenState
             controller: surveyNo,
             label: 'સર્વે નંબર',
             icon: Icons.numbers,
+          class CalculatorScreen extends StatefulWidget {
+  const CalculatorScreen({super.key});
+
+  @override
+  State<CalculatorScreen> createState() => _CalculatorScreenState();
+}
+
+class _CalculatorScreenState extends State<CalculatorScreen> {
+  final length = TextEditingController();
+  final width = TextEditingController();
+
+  double result = 0;
+
+  void calculate() {
+    final l = double.tryParse(length.text) ?? 0;
+    final w = double.tryParse(width.text) ?? 0;
+
+    setState(() {
+      result = l * w;
+    });
+  }
+
+  @override
+  void dispose() {
+    length.dispose();
+    width.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('જમીનનું Calculator'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          const Text(
+            'જમીનનું ક્ષેત્રફળ Calculator',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          TextFie
+          const SizedBox(height: 20),
+
+          TextField(
+            controller: length,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Length (Meter)',
+              prefixIcon: const Icon(Icons.straighten),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          TextField(
+            controller: width,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Width (Meter)',
+              prefixIcon: const Icon(Icons.swap_horiz),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          SizedBox(
+            height: 54,
+            child: FilledButton.icon(
+              onPressed: calculate,
+              icon: const Icon(Icons.calculate),
+              label: const Text(
+                'Calculate',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          Card(
+            elevation: 3,
+            child: Padding(
+              padding: const EdgeInsets.all(25),
+              child: Column(
+                children: [
+                  const Text(
+                    'કુલ વિસ્તાર',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '${result.toStringAsFixed(2)} ચો. મીટર',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          const Center(
+            child: Text(
+              'Example: 25 m × 40 m = 1000 ચો. મીટર',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
